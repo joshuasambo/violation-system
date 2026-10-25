@@ -1,17 +1,21 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- */
-
 package com.school.violationsystem;
 
-/**
- *
- * @author Joshua
- */
+import java.sql.Connection;
+import java.sql.SQLException;
+
 public class ViolationSystem {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
-        System.out.println("Java version: " + System.getProperty("java.version"));
+        System.out.println("Connecting to MySQL...");
+
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            System.out.println("Successfully connected to MySQL!");
+            System.out.println("Database: " +
+                    connection.getCatalog());
+
+        } catch (SQLException e) {
+            System.out.println("Database connection failed.");
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 }
