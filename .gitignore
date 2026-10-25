@@ -1,13 +1,11 @@
-# Maven build output
-
+# Build output
 target/
+out/
 
 # Java compiled files
-
 *.class
 
 # IDE settings
-
 .vscode/
 .idea/
 nbproject/
@@ -16,6 +14,5 @@ nbproject/
 .project
 
 # Operating system files
-
 .DS_Store
 Thumbs.db

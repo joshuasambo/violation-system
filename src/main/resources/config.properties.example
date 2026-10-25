@@ -1,0 +1,3 @@
+db.url=jdbc:mysql://localhost:3306/violation_system
+db.user=violation_app
+db.password=your_password_here
