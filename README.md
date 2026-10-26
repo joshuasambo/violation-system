@@ -40,17 +40,31 @@ Each developer must install and configure their own MySQL Server. The database s
 
    The database itself must exist before the application starts. The application automatically creates missing tables when it launches, so you do not need to run a table script or open Workbench for table setup.
 
-6. Create a separate MySQL account for the application and grant it permission to create tables, foreign keys, and manage Flyway's migration-history table in `violation_system`. Do not use the MySQL `root` account in the application. An administrator can grant the required database privileges in Workbench:
+6. Create a separate MySQL account for the application. Do not use the MySQL `root` account in the application. As a MySQL administrator, grant the application account the privileges needed to create and migrate tables and run the demo seed procedure:
 
    ```sql
-   GRANT CREATE, ALTER, INDEX, SELECT, INSERT, UPDATE, DELETE, REFERENCES
-   ON violation_system.*
+   GRANT
+       CREATE,
+       ALTER,
+       INDEX,
+       SELECT,
+       INSERT,
+       UPDATE,
+       DELETE,
+       REFERENCES,
+       CREATE TEMPORARY TABLES,
+       CREATE ROUTINE,
+       ALTER ROUTINE,
+       EXECUTE
+   ON `violation_system`.*
    TO 'violation_app'@'localhost';
    ```
 
-7. Copy `src/main/resources/config.properties.example` to `config.properties` in the project root. Set `db.user` and `db.password` to your local MySQL account credentials. The local `config.properties` is excluded from Git. You can alternatively set `DB_URL`, `DB_USER`, and `DB_PASSWORD` environment variables; environment variables take precedence.
+   Replace the account name and host if yours differ. `CREATE TEMPORARY TABLES` is used for the seed procedure's temporary name pools; `CREATE ROUTINE`, `ALTER ROUTINE`, and `EXECUTE` allow Flyway to create, clean up, and call the procedure.
 
-8. Start the application once. Flyway applies the migrations before showing the login screen. They create only missing tables with `CREATE TABLE IF NOT EXISTS`; they do not overwrite existing tables or their data, and they do not repair the structure of a table that already exists. The sample-data migration adds fictional grades, sections, students, guardians, and violation types only when matching records are not already present. It uses the active academic year if one exists, or creates `2026-2027` as active if no academic year is active and that year name is unused. Flyway records each migration and does not reapply it on later starts. Add future schema changes as new versioned files in `src/main/resources/db/migration/`.
+7. Copy `src/main/resources/config.properties.example` to `config.properties` in the project root. Set `db.user` and `db.password` to the application account credentials. The local `config.properties` is excluded from Git. Alternatively, set the `DB_URL`, `DB_USER`, and `DB_PASSWORD` environment variables; environment variables take precedence.
+
+8. Start the application. Flyway applies pending migrations before showing the login screen. The migrations create missing tables; they do not overwrite existing tables or repair their structure. The sample-data migration makes `2026-2027` the active academic year, adds Grades 9–12 and twelve named sections, then generates 28–38 fictional students and guardians per section from distinct name pools. Generated guardian emails use the reserved `.invalid` domain, and phone values are marked `TEST-PHONE`; both are unique in the seed data and are not real contact details. It also adds sample violation categories and types. Flyway records each migration and does not reapply it on later starts. Add future schema changes as new versioned files in `src/main/resources/db/migration/`; do not edit migrations that have already been applied.
 
 9. On the first launch when no users exist, the application displays a setup screen to create the administrator account. Public signup is disabled after setup; only an active administrator can create teacher accounts from the dashboard. Passwords are stored as salted PBKDF2 hashes.
 
@@ -71,9 +85,23 @@ Authentication loads the user's role for the session. Teacher account creation i
 
 Currently under development.
 
-When making changes in the sql query, run the main in terminal with this command
-**Important:** File path may vary
+## Database Migrations
 
+Run the application normally to apply pending Flyway migrations. Do not run `repair` every time a migration file changes: it updates Flyway's recorded checksum but does not rerun the migration. Once a migration has been applied, make database changes in a new versioned migration.
+
+### Repairing Flyway Migration History
+
+Use `repair` only after investigating a failed migration or confirming that an applied migration's contents changed without changing its database effects. Repair updates Flyway's schema history; it does not rerun a migration or undo partial database changes. Back up important data and resolve any partial migration effects before repairing.
+
+For this project, the application supports a one-time repair option. Run the Java launch command with `--repair-flyway-checksums` after the main class:
+
+```powershell
+& 'C:\Path\To\jdk-25\bin\java.exe' '@C:\Path\To\VSCode\classpath.argfile' 'com.school.violationsystem.ViolationSystem' '--repair-flyway-checksums'
+```
+
+mine is:
 ```powershell
 & 'C:\Program Files\Java\jdk-25.0.5.0.2\bin\java.exe' '@C:\Users\joshu\AppData\Local\Temp\cp_6lgjxwy11nntqo0skndy3x2gs.argfile' 'com.school.violationsystem.ViolationSystem' '--repair-flyway-checksums'
 ```
+
+Replace both paths with the Java executable and classpath argfile from your own VS Code launch command; the argfile is generated and its path may change. After repair and any pending migration succeed, launch the application normally without the flag.
