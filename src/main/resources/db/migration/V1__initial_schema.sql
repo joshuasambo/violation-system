@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS violation_system;
-USE violation_system;
-
 CREATE TABLE IF NOT EXISTS roles (
     role_id INT PRIMARY KEY AUTO_INCREMENT,
     role_name VARCHAR(50) NOT NULL UNIQUE
@@ -23,19 +20,21 @@ CREATE TABLE IF NOT EXISTS grade_levels (
     grade_name VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS sections (
-    section_id INT PRIMARY KEY AUTO_INCREMENT,
-    section_name VARCHAR(80) NOT NULL,
-    grade_level_id INT NOT NULL,
-    academic_year_id INT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS academic_years (
     academic_year_id INT PRIMARY KEY AUTO_INCREMENT,
     year_name VARCHAR(50) NOT NULL,
     start_date DATE,
     end_date DATE,
     is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS sections (
+    section_id INT PRIMARY KEY AUTO_INCREMENT,
+    section_name VARCHAR(80) NOT NULL,
+    grade_level_id INT NOT NULL,
+    academic_year_id INT NOT NULL,
+    FOREIGN KEY (grade_level_id) REFERENCES grade_levels(grade_level_id),
+    FOREIGN KEY (academic_year_id) REFERENCES academic_years(academic_year_id)
 );
 
 CREATE TABLE IF NOT EXISTS students (
@@ -53,7 +52,9 @@ CREATE TABLE IF NOT EXISTS student_enrollments (
     section_id INT NOT NULL,
     academic_year_id INT NOT NULL,
     enrollment_status VARCHAR(30) DEFAULT 'Active',
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (section_id) REFERENCES sections(section_id),
+    FOREIGN KEY (academic_year_id) REFERENCES academic_years(academic_year_id)
 );
 
 CREATE TABLE IF NOT EXISTS guardians (
@@ -103,6 +104,7 @@ CREATE TABLE IF NOT EXISTS incident_cases (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students(student_id),
     FOREIGN KEY (violation_type_id) REFERENCES violation_types(violation_type_id),
+    FOREIGN KEY (academic_year_id) REFERENCES academic_years(academic_year_id),
     FOREIGN KEY (reviewed_by) REFERENCES users(user_id)
 );
 

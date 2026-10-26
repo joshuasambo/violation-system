@@ -1,6 +1,7 @@
 # Build output
 target/
 out/
+config.properties
 
 # Java compiled files
 *.class
