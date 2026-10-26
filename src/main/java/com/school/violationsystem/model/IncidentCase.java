@@ -2,6 +2,7 @@ package com.school.violationsystem.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public class IncidentCase {
     private int caseId;
@@ -9,8 +10,13 @@ public class IncidentCase {
     private int violationTypeId;
     private int academicYearId;
     private LocalDate incidentDate;
+    private LocalTime incidentTime;
+    private String incidentLocation;
     private String caseStatus;
+    private String reviewOutcome;
+    private String confirmedClassification;
     private Integer reviewedBy;
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -71,6 +77,22 @@ public class IncidentCase {
         this.incidentDate = incidentDate;
     }
 
+    public LocalTime getIncidentTime() {
+        return incidentTime;
+    }
+
+    public void setIncidentTime(LocalTime incidentTime) {
+        this.incidentTime = incidentTime;
+    }
+
+    public String getIncidentLocation() {
+        return incidentLocation;
+    }
+
+    public void setIncidentLocation(String incidentLocation) {
+        this.incidentLocation = incidentLocation;
+    }
+
     public String getCaseStatus() {
         return caseStatus;
     }
@@ -79,12 +101,36 @@ public class IncidentCase {
         this.caseStatus = caseStatus;
     }
 
+    public String getReviewOutcome() {
+        return reviewOutcome;
+    }
+
+    public void setReviewOutcome(String reviewOutcome) {
+        this.reviewOutcome = reviewOutcome;
+    }
+
+    public String getConfirmedClassification() {
+        return confirmedClassification;
+    }
+
+    public void setConfirmedClassification(String confirmedClassification) {
+        this.confirmedClassification = confirmedClassification;
+    }
+
     public Integer getReviewedBy() {
         return reviewedBy;
     }
 
     public void setReviewedBy(Integer reviewedBy) {
         this.reviewedBy = reviewedBy;
+    }
+
+    public LocalDateTime getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public void setReviewedAt(LocalDateTime reviewedAt) {
+        this.reviewedAt = reviewedAt;
     }
 
     public LocalDateTime getCreatedAt() {

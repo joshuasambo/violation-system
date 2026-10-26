@@ -13,6 +13,9 @@ BEGIN
     DECLARE v_fn VARCHAR(50);
     DECLARE v_mn VARCHAR(50);
     DECLARE v_ln VARCHAR(50);
+    DECLARE v_guardian_fn VARCHAR(50);
+    DECLARE v_guardian_mn VARCHAR(50);
+    DECLARE v_guardian_names_valid BOOLEAN DEFAULT FALSE;
     DECLARE v_guardian_name VARCHAR(100);
     DECLARE v_email VARCHAR(150);
     DECLARE v_contact VARCHAR(50);
@@ -284,12 +287,36 @@ BEGIN
 
                     SET v_student_num = CONCAT('STU-2026-', LPAD(v_counter, 5, '0'));
                     SET v_counter = v_counter + 1;
-                    SET v_guardian_name = CONCAT('Guardian of ', v_fn, ' ', v_mn, ' ', v_ln);
+
+                    SET v_guardian_names_valid = FALSE;
+                    WHILE NOT v_guardian_names_valid DO
+                        SELECT name INTO v_guardian_fn
+                        FROM temp_first_names
+                        ORDER BY RAND()
+                        LIMIT 1;
+
+                        SELECT name INTO v_guardian_mn
+                        FROM temp_middle_names
+                        ORDER BY RAND()
+                        LIMIT 1;
+
+                        IF v_guardian_fn <> v_fn
+                           AND v_guardian_fn <> v_mn
+                           AND v_guardian_mn <> v_fn
+                           AND v_guardian_mn <> v_mn
+                           AND v_guardian_mn <> v_guardian_fn THEN
+                            SET v_guardian_names_valid = TRUE;
+                        END IF;
+                    END WHILE;
+
+                    SET v_guardian_name = CONCAT(
+                        v_guardian_fn, ' ', v_guardian_mn, ' ', v_ln
+                    );
 
                     SET v_email_suffix = 1;
                     email_loop: LOOP
                         SET v_email = CONCAT(
-                            LOWER(v_fn), '.', LOWER(v_ln), '.',
+                            LOWER(v_guardian_fn), '.', LOWER(v_ln), '.',
                             LPAD(v_email_suffix, 5, '0'), '@example.invalid'
                         );
                         SELECT COUNT(*) INTO v_existing_contact_count
@@ -360,15 +387,15 @@ DROP PROCEDURE IF EXISTS temp_seed_mock_data//
 DELIMITER ;
 
 
--- Adds example categories for organizing the demo violation types.
+-- Adds handbook severity categories used by the demo catalog.
 -- Columns: categoryId, categoryName, description.
 -- Auto-generated ID: categoryId.
 INSERT INTO violation_categories (category_name, description)
 SELECT seed.category_name, seed.description
 FROM (
-    SELECT 'Attendance' AS category_name, 'Attendance-related policy examples.' AS description
-    UNION ALL SELECT 'Classroom Conduct', 'Classroom conduct policy examples.'
-    UNION ALL SELECT 'Property', 'Care of school property policy examples.'
+    SELECT 'Minor' AS category_name, 'Minor offense classification from the handbook.' AS description
+    UNION ALL SELECT 'Moderate', 'Moderate offense classification from the handbook.'
+    UNION ALL SELECT 'Major', 'Major offense classification from the handbook.'
 ) seed
 WHERE NOT EXISTS (
     SELECT 1
@@ -376,27 +403,49 @@ WHERE NOT EXISTS (
     WHERE existing.category_name = seed.category_name
 );
 
--- Adds active example violation types under their matching categories.
--- Columns: violationTypeId, categoryId, violationName, description, isActive, policyReference.
--- Auto-generated ID: violationTypeId.
-INSERT INTO violation_types (category_id, violation_name, description, is_active)
-SELECT category.category_id, seed.violation_name, seed.description, TRUE
+-- Adds demo handbook sections beneath their severity categories.
+-- Columns: handbookSectionId, categoryId, sectionName, description.
+-- Auto-generated ID: handbookSectionId.
+INSERT INTO handbook_sections (category_id, section_name, description)
+SELECT category.category_id, seed.section_name, seed.description
 FROM (
-    SELECT 'Attendance' AS category_name, 'Unexcused Absence' AS violation_name,
-           'Sample attendance violation type.' AS description
-    UNION ALL SELECT 'Attendance', 'Repeated Tardiness', 'Sample attendance violation type.'
-    UNION ALL SELECT 'Classroom Conduct', 'Classroom Disruption', 'Sample conduct violation type.'
-    UNION ALL SELECT 'Classroom Conduct', 'Disrespectful Conduct', 'Sample conduct violation type.'
-    UNION ALL SELECT 'Property', 'Damage to School Property', 'Sample property violation type.'
+    SELECT 'Minor' AS category_name, 'Attendance' AS section_name,
+           'Demo section for attendance-related minor offenses.' AS description
+    UNION ALL SELECT 'Moderate', 'Disruptive Behavior',
+           'Demo section for disruptive-behavior moderate offenses.'
+    UNION ALL SELECT 'Major', 'Vandalism',
+           'Demo section for major property-damage offenses.'
 ) seed
 JOIN violation_categories category ON category.category_name = seed.category_name
-   AND category.category_id = (
-       SELECT MIN(existing.category_id)
-       FROM violation_categories existing
-       WHERE existing.category_name = seed.category_name
-   )
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM handbook_sections existing
+    WHERE existing.category_id = category.category_id
+      AND existing.section_name = seed.section_name
+);
+
+-- Adds illustrative active violation types under their handbook sections.
+-- Columns: violationTypeId, handbookSectionId, violationName, description, isActive, policyReference.
+-- Auto-generated ID: violationTypeId.
+INSERT INTO violation_types (handbook_section_id, violation_name, description, is_active)
+SELECT section.handbook_section_id, seed.violation_name, seed.description, TRUE
+FROM (
+    SELECT 'Minor' AS category_name, 'Attendance' AS section_name,
+           'Unexcused Absence' AS violation_name, 'Sample attendance violation type.' AS description
+    UNION ALL SELECT 'Minor', 'Attendance', 'Repeated Tardiness', 'Sample attendance violation type.'
+    UNION ALL SELECT 'Moderate', 'Disruptive Behavior', 'Classroom Disruption',
+           'Sample disruptive-behavior violation type.'
+    UNION ALL SELECT 'Moderate', 'Disruptive Behavior', 'Disrespectful Conduct',
+           'Sample disruptive-behavior violation type.'
+    UNION ALL SELECT 'Major', 'Vandalism', 'Damage to School Property',
+           'Sample major property-damage violation type.'
+) seed
+JOIN violation_categories category ON category.category_name = seed.category_name
+JOIN handbook_sections section ON section.category_id = category.category_id
+   AND section.section_name = seed.section_name
 WHERE NOT EXISTS (
     SELECT 1
     FROM violation_types existing
-    WHERE existing.violation_name = seed.violation_name
+    WHERE existing.handbook_section_id = section.handbook_section_id
+      AND existing.violation_name = seed.violation_name
 );
