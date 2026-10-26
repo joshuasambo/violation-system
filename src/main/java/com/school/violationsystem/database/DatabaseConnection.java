@@ -12,6 +12,11 @@ public class DatabaseConnection {
         String user = DatabaseConfig.getUser();
         String password = DatabaseConfig.getPassword();
 
+        if (url.isBlank() || user.isBlank() || password.isEmpty()) {
+            throw new SQLException(
+                    "Database settings are incomplete. Configure DB_URL, DB_USER, and DB_PASSWORD.");
+        }
+
         return DriverManager.getConnection(url, user, password);
     }
 }
