@@ -74,7 +74,7 @@ public class StudentDAO {
                 WHERE e.section_id = ?
                   AND e.academic_year_id = s.academic_year_id
                   AND ay.is_active = TRUE
-                ORDER BY st.last_name, st.first_name, st.middle_name
+                ORDER BY st.first_name, st.middle_name, st.last_name
                 """;
         List<Student> students = new ArrayList<>();
 

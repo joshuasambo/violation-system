@@ -18,6 +18,7 @@ public class StudentsPanel extends JPanel {
     private static final String GRADE_LEVELS = "grade-levels";
     private static final String SECTIONS = "sections";
     private static final String STUDENTS = "students";
+    private static final Color COLOR_SURFACE = Color.decode("#F8F9FC");
 
     private final StudentService studentService = new StudentService();
     private final CardLayout cardLayout = new CardLayout();
@@ -29,10 +30,10 @@ public class StudentsPanel extends JPanel {
     public StudentsPanel() {
         super();
         setLayout(cardLayout);
-        setBackground(Color.decode("#F8F9FC"));
+        setBackground(COLOR_SURFACE);
 
-        gradeLevelPanel = new SelectionPanel<>("Choose a grade level", null);
-        sectionPanel = new SelectionPanel<>("Choose a section", this::showGradeLevels);
+        gradeLevelPanel = new SelectionPanel<>("Select a Grade Level", null);
+        sectionPanel = new SelectionPanel<>("Select a Section", this::showGradeLevels);
         studentListPanel = new StudentListPanel(this::showSections);
 
         add(gradeLevelPanel, GRADE_LEVELS);
@@ -64,7 +65,7 @@ public class StudentsPanel extends JPanel {
     }
 
     private void loadSections(GradeLevel gradeLevel) {
-        sectionPanel.setTitle("Choose a section in " + gradeLevel.name());
+        sectionPanel.setTitle("Select a Section in " + gradeLevel.name());
         sectionPanel.showLoading("Loading sections...");
         cardLayout.show(this, SECTIONS);
         loadAsync(
@@ -79,7 +80,7 @@ public class StudentsPanel extends JPanel {
     }
 
     private void loadStudents(Section section) {
-        studentListPanel.setTitle(section.name() + " - " + section.academicYear());
+        studentListPanel.setTitle(section.name() + " — " + section.academicYear());
         studentListPanel.showLoading();
         cardLayout.show(this, STUDENTS);
         loadAsync(
