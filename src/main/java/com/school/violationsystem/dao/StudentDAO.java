@@ -2,14 +2,17 @@ package com.school.violationsystem.dao;
 
 import com.school.violationsystem.database.DatabaseConnection;
 import com.school.violationsystem.model.GradeLevel;
+import com.school.violationsystem.model.Guardian;
 import com.school.violationsystem.model.Section;
 import com.school.violationsystem.model.Student;
+import com.school.violationsystem.model.StudentPlacement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class StudentDAO {
 
@@ -96,6 +99,61 @@ public class StudentDAO {
         }
 
         return students;
+    }
+
+    public List<Guardian> findGuardiansByStudentId(int studentId) throws SQLException {
+        String sql = """
+                SELECT g.guardian_id, g.full_name, g.relationship, g.contact_number, g.email
+                FROM student_guardians sg
+                JOIN guardians g ON g.guardian_id = sg.guardian_id
+                WHERE sg.student_id = ?
+                ORDER BY sg.is_primary_contact DESC, g.full_name
+                """;
+        List<Guardian> guardians = new ArrayList<>();
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, studentId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    guardians.add(new Guardian(
+                            resultSet.getInt("guardian_id"),
+                            resultSet.getString("full_name"),
+                            resultSet.getString("relationship"),
+                            resultSet.getString("contact_number"),
+                            resultSet.getString("email")));
+                }
+            }
+        }
+
+        return guardians;
+    }
+
+    public Optional<StudentPlacement> findActivePlacementByStudentId(int studentId) throws SQLException {
+        String sql = """
+                SELECT gl.grade_name, s.section_name
+                FROM student_enrollments e
+                JOIN sections s ON s.section_id = e.section_id
+                JOIN grade_levels gl ON gl.grade_level_id = s.grade_level_id
+                JOIN academic_years ay ON ay.academic_year_id = e.academic_year_id
+                WHERE e.student_id = ? AND ay.is_active = TRUE
+                ORDER BY e.enrollment_id DESC
+                LIMIT 1
+                """;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, studentId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(new StudentPlacement(
+                            resultSet.getString("grade_name"),
+                            resultSet.getString("section_name")));
+                }
+            }
+        }
+
+        return Optional.empty();
     }
 
     public List<Student> findAll() throws SQLException {

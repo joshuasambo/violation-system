@@ -38,7 +38,7 @@ public class DashboardFrame extends JFrame {
     private static final Color COLOR_MUTED = Color.decode("#5A587A");   // Muted Text
     private static final Color COLOR_WHITE = Color.white;
 
-    private final StudentsPanel studentsPanel = new StudentsPanel();
+    private final StudentsPanel studentsPanel;
     private JButton activeSidebarButton;
 
     public DashboardFrame(User user) {
@@ -48,6 +48,7 @@ public class DashboardFrame extends JFrame {
         }
 
         Objects.requireNonNull(user, "user");
+        studentsPanel = new StudentsPanel(user);
         setTitle("Violation System - Dashboard");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1100, 720);

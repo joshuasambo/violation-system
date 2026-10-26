@@ -2,6 +2,8 @@ package com.school.violationsystem.ui.panels.students;
 
 import com.school.violationsystem.model.GradeLevel;
 import com.school.violationsystem.model.Section;
+import com.school.violationsystem.model.Student;
+import com.school.violationsystem.model.User;
 import com.school.violationsystem.service.StudentService;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -18,6 +20,7 @@ public class StudentsPanel extends JPanel {
     private static final String GRADE_LEVELS = "grade-levels";
     private static final String SECTIONS = "sections";
     private static final String STUDENTS = "students";
+    private static final String STUDENT_DETAILS = "student-details";
     private static final Color COLOR_SURFACE = Color.decode("#F8F9FC");
 
     private final StudentService studentService = new StudentService();
@@ -25,16 +28,20 @@ public class StudentsPanel extends JPanel {
     private final SelectionPanel<GradeLevel> gradeLevelPanel;
     private final SelectionPanel<Section> sectionPanel;
     private final StudentListPanel studentListPanel;
+    private final User user;
+    private StudentDetailsPanel studentDetailsPanel;
+    private String currentCard = GRADE_LEVELS;
     private SwingWorker<?, ?> loadingWorker;
 
-    public StudentsPanel() {
+    public StudentsPanel(User user) {
         super();
+        this.user = user;
         setLayout(cardLayout);
         setBackground(COLOR_SURFACE);
 
         gradeLevelPanel = new SelectionPanel<>("Select a Grade Level", null);
         sectionPanel = new SelectionPanel<>("Select a Section", this::showGradeLevels);
-        studentListPanel = new StudentListPanel(this::showSections);
+        studentListPanel = new StudentListPanel(this::showSections, this::showStudentDetails);
 
         add(gradeLevelPanel, GRADE_LEVELS);
         add(sectionPanel, SECTIONS);
@@ -43,14 +50,22 @@ public class StudentsPanel extends JPanel {
     }
 
     public void onShown() {
-        loadGradeLevels();
+        if (currentCard.equals(GRADE_LEVELS)) {
+            loadGradeLevels();
+        } else if (currentCard.equals(STUDENT_DETAILS) && studentDetailsPanel != null) {
+            studentDetailsPanel.onShown();
+        }
     }
 
     public void onHidden() {
         cancelLoading();
+        if (studentDetailsPanel != null) {
+            studentDetailsPanel.onHidden();
+        }
     }
 
     private void loadGradeLevels() {
+        currentCard = GRADE_LEVELS;
         cardLayout.show(this, GRADE_LEVELS);
         gradeLevelPanel.showLoading("Loading available grade levels...");
         loadAsync(
@@ -65,6 +80,7 @@ public class StudentsPanel extends JPanel {
     }
 
     private void loadSections(GradeLevel gradeLevel) {
+        currentCard = SECTIONS;
         sectionPanel.setTitle("Select a Section in " + gradeLevel.name());
         sectionPanel.showLoading("Loading sections...");
         cardLayout.show(this, SECTIONS);
@@ -80,6 +96,7 @@ public class StudentsPanel extends JPanel {
     }
 
     private void loadStudents(Section section) {
+        currentCard = STUDENTS;
         studentListPanel.setTitle(section.name() + " — " + section.academicYear());
         studentListPanel.showLoading();
         cardLayout.show(this, STUDENTS);
@@ -92,12 +109,31 @@ public class StudentsPanel extends JPanel {
 
     private void showGradeLevels() {
         cancelLoading();
+        currentCard = GRADE_LEVELS;
         cardLayout.show(this, GRADE_LEVELS);
     }
 
     private void showSections() {
         cancelLoading();
+        currentCard = SECTIONS;
         cardLayout.show(this, SECTIONS);
+    }
+
+    private void showStudentDetails(Student student) {
+        if (studentDetailsPanel != null) {
+            studentDetailsPanel.onHidden();
+            remove(studentDetailsPanel);
+        }
+        studentDetailsPanel = new StudentDetailsPanel(student, user, () -> {
+            studentDetailsPanel.onHidden();
+            currentCard = STUDENTS;
+            cardLayout.show(this, STUDENTS);
+        });
+        add(studentDetailsPanel, STUDENT_DETAILS);
+        currentCard = STUDENT_DETAILS;
+        cardLayout.show(this, STUDENT_DETAILS);
+        revalidate();
+        repaint();
     }
 
     private <T> void loadAsync(

@@ -2,7 +2,10 @@ package com.school.violationsystem.model;
 
 public class ViolationType {
     private int violationTypeId;
-    private int categoryId;
+    private int handbookSectionId;
+    private int severityCategoryId;
+    private String handbookSectionName;
+    private String severityCategoryName;
     private String violationName;
     private String description;
     private boolean active;
@@ -10,9 +13,10 @@ public class ViolationType {
     public ViolationType() {
     }
 
-    public ViolationType(int violationTypeId, int categoryId, String violationName, String description, boolean active) {
+    public ViolationType(
+            int violationTypeId, int handbookSectionId, String violationName, String description, boolean active) {
         this.violationTypeId = violationTypeId;
-        this.categoryId = categoryId;
+        this.handbookSectionId = handbookSectionId;
         this.violationName = violationName;
         this.description = description;
         this.active = active;
@@ -26,12 +30,36 @@ public class ViolationType {
         this.violationTypeId = violationTypeId;
     }
 
-    public int getCategoryId() {
-        return categoryId;
+    public int getHandbookSectionId() {
+        return handbookSectionId;
     }
 
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
+    public void setHandbookSectionId(int handbookSectionId) {
+        this.handbookSectionId = handbookSectionId;
+    }
+
+    public int getSeverityCategoryId() {
+        return severityCategoryId;
+    }
+
+    public void setSeverityCategoryId(int severityCategoryId) {
+        this.severityCategoryId = severityCategoryId;
+    }
+
+    public String getHandbookSectionName() {
+        return handbookSectionName;
+    }
+
+    public void setHandbookSectionName(String handbookSectionName) {
+        this.handbookSectionName = handbookSectionName;
+    }
+
+    public String getSeverityCategoryName() {
+        return severityCategoryName;
+    }
+
+    public void setSeverityCategoryName(String severityCategoryName) {
+        this.severityCategoryName = severityCategoryName;
     }
 
     public String getViolationName() {

@@ -17,6 +17,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -47,10 +49,15 @@ final class StudentListPanel extends JPanel {
             return false;
         }
     };
+    private final JTable studentTable = new JTable(tableModel);
+    private final JButton detailsButton = new JButton("View Student Details");
+    private final Consumer<Student> onStudentSelected;
+    private List<Student> students = List.of();
 
-    StudentListPanel(Runnable onBack) {
+    StudentListPanel(Runnable onBack, Consumer<Student> onStudentSelected) {
         // Matching BorderLayout gaps and padding with SelectionPanel
         super(new BorderLayout(16, 24));
+        this.onStudentSelected = onStudentSelected;
         setBackground(COLOR_SURFACE);
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
 
@@ -83,7 +90,6 @@ final class StudentListPanel extends JPanel {
         add(header, BorderLayout.NORTH);
 
         // Table Styling & Customization
-        JTable studentTable = new JTable(tableModel);
         studentTable.setFillsViewportHeight(true);
         studentTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         studentTable.setForeground(COLOR_TEXT);
@@ -121,6 +127,17 @@ final class StudentListPanel extends JPanel {
         for (int i = 0; i < studentTable.getColumnCount(); i++) {
             studentTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
+        studentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        studentTable.getSelectionModel().addListSelectionListener(event ->
+                detailsButton.setEnabled(studentTable.getSelectedRow() >= 0));
+        studentTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() == 2 && studentTable.getSelectedRow() >= 0) {
+                    showSelectedStudentDetails();
+                }
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(studentTable);
         scrollPane.getViewport().setBackground(COLOR_WHITE);
@@ -131,10 +148,20 @@ final class StudentListPanel extends JPanel {
         RoundedScrollBarUI.install(scrollPane);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Footer Status Label
+        detailsButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        detailsButton.setForeground(COLOR_WHITE);
+        detailsButton.setBackground(COLOR_PRIMARY);
+        detailsButton.setFocusPainted(false);
+        detailsButton.setEnabled(false);
+        detailsButton.addActionListener(event -> showSelectedStudentDetails());
+
+        JPanel footer = new JPanel(new BorderLayout(12, 0));
+        footer.setBackground(COLOR_SURFACE);
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statusLabel.setForeground(COLOR_MUTED);
-        add(statusLabel, BorderLayout.SOUTH);
+        footer.add(statusLabel, BorderLayout.CENTER);
+        footer.add(detailsButton, BorderLayout.EAST);
+        add(footer, BorderLayout.SOUTH);
     }
 
     void setTitle(String title) {
@@ -143,17 +170,22 @@ final class StudentListPanel extends JPanel {
 
     void showLoading() {
         tableModel.setRowCount(0);
+        students = List.of();
+        detailsButton.setEnabled(false);
         statusLabel.setText("Loading students...");
     }
 
     void showError(String message) {
         tableModel.setRowCount(0);
+        students = List.of();
+        detailsButton.setEnabled(false);
         statusLabel.setText(message);
     }
 
     void showStudents(List<Student> students) {
+        this.students = List.copyOf(students);
         tableModel.setRowCount(0);
-        for (Student student : students) {
+        for (Student student : this.students) {
             tableModel.addRow(new Object[] {
                     student.getSchoolStudentNumber(),
                     fullName(student),
@@ -161,6 +193,15 @@ final class StudentListPanel extends JPanel {
             });
         }
         statusLabel.setText(students.isEmpty() ? "No students are enrolled in this section." : " ");
+        detailsButton.setEnabled(false);
+    }
+
+    private void showSelectedStudentDetails() {
+        int selectedRow = studentTable.getSelectedRow();
+        if (selectedRow < 0 || selectedRow >= students.size()) {
+            return;
+        }
+        onStudentSelected.accept(students.get(selectedRow));
     }
 
     private String fullName(Student student) {
